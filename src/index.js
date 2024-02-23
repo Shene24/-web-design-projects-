@@ -13,7 +13,7 @@ app.use(express.json());
 app.set("view engine", "hbs");
 app.set("views", templatePath);
 
-mongoose.connect("mongodb://localhost:27017/housebookingdb");
+mongoose.connect("mongodb://localhost:27017/housebooking");
 var db = mongoose.connection;
 db.on("error", console.error.bind(console, "connection error:")); // Fix this line
 db.once("open", function () {
@@ -32,7 +32,7 @@ app.post("/index", async (req, res) => {
   var checkintime = req.body.checkintime;
   var checkouttime = req.body.checkouttime;
   var numberofguests = req.body.numberofguests;
-  var reservation = new Reservation({
+  var reservation = {
     firstname: firstname,
     lastname: lastname,
     email: email,
@@ -42,7 +42,14 @@ app.post("/index", async (req, res) => {
     numberofguests: numberofguests,
     checkintime: checkintime,
     checkouttime: checkouttime,
+  };
+  db.collection("users").intertOne(reservation, (err, collection) => {
+    if (err) {
+      throw err;
+    }
+    console.log("Record inserted successfully");
   });
+  return res.redirect("/index");
 });
 
 app.get("/", (req, res) => {
