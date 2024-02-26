@@ -8,16 +8,20 @@ app.use(express.static(publicPath));
 const partialsPath = path.join(__dirname, "../templates/partials");
 hbs.registerPartials(partialsPath);
 const mongoose = require("mongoose");
+require("dotenv").config();
 
-app.use(express.json());
-app.set("view engine", "hbs");
-app.set("views", templatePath);
+const dbUrl = process.env.DB_URL;
 
-mongoose.connect("mongodb://localhost:27017/housebooking");
-var db = mongoose.connection;
-db.on("error", console.error.bind(console, "connection error:")); // Fix this line
-db.once("open", function () {
-  console.log("Connected to database");
+mongoose.connect(dbUrl, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
+
+const db = mongoose.connection;
+
+db.on("error", console.error.bind(console, "MongoDB connection error:"));
+db.once("open", () => {
+  console.log("Connected to MongoDB");
 });
 
 app.post("/index", async (req, res) => {
@@ -28,10 +32,10 @@ app.post("/index", async (req, res) => {
   var phone = req.body.phone;
   var checkin = req.body.checkin;
   var checkout = req.body.checkout;
-  var numberofguests = req.body.numberofguests;
   var checkintime = req.body.checkintime;
   var checkouttime = req.body.checkouttime;
   var numberofguests = req.body.numberofguests;
+
   var reservation = {
     firstname: firstname,
     lastname: lastname,
@@ -43,13 +47,15 @@ app.post("/index", async (req, res) => {
     checkintime: checkintime,
     checkouttime: checkouttime,
   };
-  db.collection("users").intertOne(reservation, (err, collection) => {
+
+  db.collection("users").insertOne(reservation, (err, result) => {
     if (err) {
-      throw err;
+      console.error("Error inserting record:", err);
+      return res.status(500).send("Internal Server Error");
     }
     console.log("Record inserted successfully");
+    return res.redirect("/index");
   });
-  return res.redirect("/index");
 });
 
 app.get("/", (req, res) => {
